@@ -1,1 +1,6 @@
-
+*.txt
+*.log
+*/__pycache__/
+.vscode/
+testing_files/*
+.env
