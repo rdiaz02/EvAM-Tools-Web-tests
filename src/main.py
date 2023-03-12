@@ -7,4 +7,6 @@ if __name__ == '__main__':
 
     test_runner = tester(web_driver)
     test_runner.analyzing_BRCA_data_set()
-    test_runner.analyzing_manually_constructed_synthetic_data()
+    #test_runner.analyzing_manually_constructed_synthetic_data()
+    #test_runner.small_computational_experiments()
+    #test_runner.analyzing_manually_constructed_data()
