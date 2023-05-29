@@ -1,0 +1,27 @@
+{
+    "group_name": [
+        {"test_name": {
+            "headless": true,
+            "maximize": false,
+            "browser": "firefox",
+            "large_log": false,
+            "screenshots": false
+            }
+        }
+    ],
+    "group_name_2": [
+        {"test_name": {
+            "headless": true,
+            "maximize": false,
+            "browser": "firefox",
+            "large_log": false,
+            "screenshots": false
+            }
+        }
+    ]
+}
+
+
+
+
+
