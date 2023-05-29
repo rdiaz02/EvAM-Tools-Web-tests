@@ -1,5 +1,10 @@
 *.log
-*/__pycache__/
+*.json
+*/__pycache__/*
+/src/__pycache__/
+/src/selenium_core/__pycache__/*
+/src/tests/__pycache__/*
 .vscode/
-testing_files/*
 .env
+/browsers/firefox/browser/*
+/browsers/firefox/driver/*
