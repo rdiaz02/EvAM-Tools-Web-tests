@@ -4,6 +4,15 @@ import argparse
 from os import getenv
 from typing import List
 from selenium_core.selenium_wrapper import validate_browser
+from dotenv import load_dotenv
+
+try:
+    load_dotenv()
+except FileNotFoundError:
+    print(
+        "No .env file found. Make sure you have a .env file in the root folder of the project"
+    )
+    exit(1)
 
 TESTS_SELECTOR_PATH = getenv("TESTS_SELECTOR_PATH")
 
