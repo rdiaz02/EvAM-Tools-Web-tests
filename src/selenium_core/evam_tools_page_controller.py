@@ -1,10 +1,9 @@
 from time import time, sleep
 
-from selenium.webdriver.common.by import By
+from selenium_core.selenium_wrapper import WrappedDriver
+
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as ec
 from selenium.common.exceptions import (
     WebDriverException,
     NoSuchElementException,
@@ -12,28 +11,23 @@ from selenium.common.exceptions import (
 )
 
 
-class EvAMToolsPage:
-    def __init__(self, driver, large_log=False, screenshots=False):
+class EvAMToolsDriver(WrappedDriver):
+    def __init__(self, **config):
         """
         Initializes a new instance of the PageController class with the specified options.
 
         Args:
             driver (webdriver): The WebDriver instance to use.
             large_log (bool): Whether to enable large logging.
-            screenshots (bool): Whether to take screenshots on errors.
         """
-        # Set the driver, large_log, and screenshots options as instance variables
-        self.driver = driver
-        self.large_log = large_log
-        self.screenshots = screenshots
+        super().__init__(**config)
 
-        # Find the navbar element and get its session ID
         self.navbar = self.driver.find_element_by_id("navbar")
         self.session_id = self.navbar.get_attribute("data-tabsetid")
 
-        # Find the tabs content elements and set the active tab to None
         self.tabs_content = self.driver.find_elements_by_xpath(
-            "//div[@class='tab-content']/div")
+            "//div[@class='tab-content']/div"
+        )
         self.active_tab = None
 
     def navbar_to(self, tab_name, timeout) -> None:
@@ -84,7 +78,6 @@ class EvAMToolsPage:
         Returns:
             None
         """
-        # If div is None, use the active tab
         if div == None:
             div = self.active_tab
 
@@ -97,91 +90,6 @@ class EvAMToolsPage:
             if elem.tag_name == "div":
                 self.load_content(elem)
 
-    def wait_invisibility_by_xpath(self, xpath, timeout=10) -> bool:
-        """
-        Waits for an element to become invisible by its xpath.
-
-        Args:
-            xpath (str): The xpath of the element to wait for.
-            timeout (int): The maximum amount of time to wait for the element to become invisible.
-
-        Returns:
-            bool: True if the element becomes invisible within the specified timeout, False otherwise.
-        """
-        try:
-            # Wait for the element to become invisible using the specified xpath and timeout
-            WebDriverWait(self.driver, timeout).until(
-                ec.invisibility_of_element_located((By.XPATH, xpath))
-            )
-            return True
-        except Exception:
-            return False
-
-    def wait_visibility_by_xpath(self, xpath, timeout=10) -> bool:
-        """
-        Waits for an element to become visible by its xpath.
-
-        Args:
-            xpath (str): The xpath of the element to wait for.
-            timeout (int): The maximum amount of time to wait for the element to become visible.
-
-        Returns:
-            bool: True if the element becomes visible within the specified timeout, False otherwise.
-        """
-        try:
-            # Wait for the element to become visible using the specified xpath and timeout
-            WebDriverWait(self.driver, timeout).until(
-                ec.visibility_of_element_located((By.XPATH, xpath))
-            )
-            return True
-        except Exception:
-            return False
-
-    def find_element_by_text(self, tag_name, text, ui_element=None) -> None:
-        """
-        Finds an element by its tag name and text.
-
-        Args:
-            tag_name (str): The tag name of the element to find.
-            text (str): The text of the element to find.
-            ui_element (WebElement): The UI element to search within. Defaults to the active tab.
-
-        Returns:
-            WebElement: The element with the specified tag name and text, or None if not found.
-        """
-        if ui_element == None:
-            ui_element = self.active_tab
-
-        # Find all elements with the specified tag name within the specified UI element
-        for elem in ui_element.find_elements_by_tag_name(tag_name):
-            # If the element's text matches the specified text, return the element
-            if elem.text == text:
-                return elem
-        # If no element is found, return None
-        return None
-
-    def scroll_into_view(self, element):
-        """
-        Scrolls the specified element into view.
-
-        Args:
-            element (WebElement): The element to scroll into view.
-
-        Returns:
-            None
-        """
-        clickable = False
-        while clickable == False:
-            # Scroll the window by 300 pixels
-            self.driver.execute_script("window.scrollBy(0,300)")
-            try:
-                # Try to click the element
-                element.click()
-                clickable = True
-            except WebDriverException:
-                # If the element is not clickable, continue scrolling
-                pass
-
     def select_from_checklist(self, ui_element, check: list) -> None:
         """
         Selects the specified options from a checklist UI element.
@@ -193,7 +101,6 @@ class EvAMToolsPage:
         Returns:
             None
         """
-        # Scroll the UI element into view
         self.scroll_into_view(ui_element)
 
         # Loop through the options in the UI element
@@ -225,7 +132,6 @@ class EvAMToolsPage:
         Returns:
             None
         """
-        # Scroll the UI element into view
         self.scroll_into_view(ui_element)
 
         # Click on the dropdown input element to open the dropdown
@@ -250,14 +156,11 @@ class EvAMToolsPage:
         Returns:
             None
         """
-        # Scroll the UI element into view
         self.scroll_into_view(ui_element)
 
         # Get the minimum and maximum values of the slider bar
-        slider_min_value = int(
-            ui_element.find_element_by_class_name("irs-min").text)
-        slider_max_value = int(
-            ui_element.find_element_by_class_name("irs-max").text)
+        slider_min_value = int(ui_element.find_element_by_class_name("irs-min").text)
+        slider_max_value = int(ui_element.find_element_by_class_name("irs-max").text)
 
         # Check if the specified value is within the range of the slider bar
         if value < slider_min_value or value > slider_max_value:
@@ -276,8 +179,7 @@ class EvAMToolsPage:
         slider = ui_element.find_element_by_class_name("irs-handle")
 
         # Determine the direction to move the slider
-        direction = Keys.ARROW_RIGHT if value > int(
-            slider_value) else Keys.ARROW_LEFT
+        direction = Keys.ARROW_RIGHT if value > int(slider_value) else Keys.ARROW_LEFT
 
         # Move the slider until the specified value is selected
         while slider_value != value:
@@ -301,14 +203,11 @@ class EvAMToolsPage:
         Returns:
             None
         """
-        # Scroll the UI element into view
         self.scroll_into_view(ui_element)
 
         # Find the option element with the specified text and click on its input element
-        option_element = ui_element.find_element_by_xpath(
-            f".//span[text()='{option}']")
-        option_element.find_element_by_xpath(
-            "./preceding-sibling::input").click()
+        option_element = ui_element.find_element_by_xpath(f".//span[text()='{option}']")
+        option_element.find_element_by_xpath("./preceding-sibling::input").click()
 
     def select_from_cross_sectional_data(self, tag_name: str) -> None:
         """
@@ -321,10 +220,12 @@ class EvAMToolsPage:
             None
         """
         # Find the cross-sectional data section and the button with the specified tag
-        cross_sectional_section = self.active_tab.find_element_by_xpath('//*[@id="tab-{}-2"]/div/div/div/div[1]'.format(
-            self.session_id))
+        cross_sectional_section = self.active_tab.find_element_by_xpath(
+            f'//*[@id="tab-{self.session_id}-2"]/div/div/div/div[1]'
+        )
         cross_sectional_button = cross_sectional_section.find_element_by_xpath(
-            f'.//span[text()="{tag_name}"]')
+            f'.//span[text()="{tag_name}"]'
+        )
 
         # Click on the button and load the content
         cross_sectional_button.click()
@@ -340,9 +241,7 @@ class EvAMToolsPage:
         Returns:
             None
         """
-        # Click on the "Analysis" button
-        analysis_button = self.active_tab.find_element_by_xpath(
-            '//*[@id="analysis"]')
+        analysis_button = self.active_tab.find_element_by_xpath('//*[@id="analysis"]')
         analysis_button.click()
 
         # Wait for the loading spinner to appear and disappear
@@ -360,17 +259,15 @@ class EvAMToolsPage:
         Returns:
             None
         """
-        # Find the advanced options element and scroll it into view
         advanced_options = self.active_tab.find_element_by_xpath(
-            '//*[@id="advanced_options"]')
+            '//*[@id="advanced_options"]'
+        )
         self.scroll_into_view(advanced_options)
 
-        # If the all advanced options element is not displayed, click on the advanced options element
-        # and wait for the all advanced options element to become visible
-        if not self.active_tab.find_element_by_xpath('//*[@id="all_advanced_options"]'
-                                                     ).is_displayed():
-            self.active_tab.find_element_by_xpath(
-                '//*[@id="advanced_options"]').click()
+        if not self.active_tab.find_element_by_xpath(
+            '//*[@id="all_advanced_options"]'
+        ).is_displayed():
+            self.active_tab.find_element_by_xpath('//*[@id="advanced_options"]').click()
             self.wait_visibility_by_xpath('//*[@id="all_advanced_options"]')
 
     def toogle_advanced_options_off(self) -> None:
@@ -380,17 +277,14 @@ class EvAMToolsPage:
         Returns:
             None
         """
-        # Find the advanced options element and scroll it into view
         advanced_options = self.active_tab.find_element_by_xpath(
-            '//*[@id="advanced_options"]')
+            '//*[@id="advanced_options"]'
+        )
         self.scroll_into_view(advanced_options)
 
-        # If the all advanced options element is visible, click on the advanced options element
-        # and wait for the all advanced options element to disappear
         if self.wait_visibility_by_xpath('//*[@id="all_advanced_options"]', 1):
             advanced_options.click()
-            self.wait_invisibility_by_xpath(
-                '//*[@id="all_advanced_options"]', 1)
+            self.wait_invisibility_by_xpath('//*[@id="all_advanced_options"]', 1)
 
     def set_advanced_options(self, option_name, option_value, timeout=10) -> None:
         """
@@ -404,36 +298,32 @@ class EvAMToolsPage:
         Returns:
             None
         """
-        # Find the advanced options element and wait for it to become visible
-        advanced_options = self.active_tab.find_element_by_id(
-            "all_advanced_options")
+        advanced_options = self.active_tab.find_element_by_id("all_advanced_options")
         self.wait_visibility_by_id("all_advanced_options", timeout)
 
-        # Loop through all the options in the advanced options element
         for option in advanced_options.find_elements_by_xpath("./div/div"):
-            # If the option name does not match, continue to the next option
             if option.find_element_by_xpath("./label").text != option_name:
                 continue
 
-            # Determine the type of the option (input or div)
             try:
                 option.find_element_by_xpath("./div")
                 type = "div"
             except NoSuchElementException:
                 type = "input"
 
-            # Set the value of the option based on its type
             if type == "div":
-                # If the option is a checklist, select the specified value
-                if option.find_element_by_xpath("./div").get_attribute("class") == "shiny-options-group":
+                if (
+                    option.find_element_by_xpath("./div").get_attribute("class")
+                    == "shiny-options-group"
+                ):
                     self.select_from_checklist(
-                        option.find_element_by_xpath("./div"), option_value)
-                # If the option is a dropdown, select the specified value
+                        option.find_element_by_xpath("./div"), option_value
+                    )
                 else:
                     self.select_from_dropdown(
-                        option.find_element_by_xpath("./div"), option_value)
+                        option.find_element_by_xpath("./div"), option_value
+                    )
             elif type == "input":
-                # If the option is an input field, clear its current value and set the specified value
                 option.find_element_by_xpath("./input").clear()
                 option.find_element_by_xpath("./input").send_keys(option_value)
 
@@ -448,30 +338,26 @@ class EvAMToolsPage:
         Returns:
             None
         """
-        # Check that the index and counts lists have the same length
         if len(index) != len(counts):
             raise ValueError("Index, counts must have the same length")
 
-        # Find the genotype table element and scroll it into view
         genotype_table = self.active_tab.find_element_by_id(
-            "change_counts").find_element_by_tag_name("table")
+            "change_counts"
+        ).find_element_by_tag_name("table")
         self.scroll_into_view(genotype_table)
 
-        # Loop through each row in the genotype table
         for idx, row in enumerate(genotype_table.find_elements_by_xpath("./tbody/tr")):
-            # If the index of the row matches one of the specified indices, change the count
             if int(row.find_element_by_xpath("./td[1]").text) == index[idx]:
-                # Double-click on the count cell to activate the input field
                 ActionChains(self.driver).double_click(
-                    row.find_element_by_xpath("./td[3]")).perform()
-                # Clear the current count and set the specified count
-                row.find_element_by_xpath("./td[3]/input").clear()
-                row.find_element_by_xpath(
-                    "./td[3]/input").send_keys(counts[idx])
+                    row.find_element_by_xpath("./td[3]")
+                ).perform()
 
-        # Press Ctrl+Enter to save the changes and wait for 1 second
-        ActionChains(self.driver).key_down(Keys.CONTROL).send_keys(
-            Keys.ENTER).key_up(Keys.CONTROL).perform()
+                row.find_element_by_xpath("./td[3]/input").clear()
+                row.find_element_by_xpath("./td[3]/input").send_keys(counts[idx])
+
+        ActionChains(self.driver).key_down(Keys.CONTROL).send_keys(Keys.ENTER).key_up(
+            Keys.CONTROL
+        ).perform()
         sleep(1)
 
     def rename_data(self, data_to_rename, rename) -> None:
@@ -485,15 +371,13 @@ class EvAMToolsPage:
         Returns:
             None
         """
-        # Scroll the cross-sectional data element into view and select the specified data
         self.scroll_into_view(self.active_tab.find_element_by_id("select_csd"))
         self.select_from_cross_sectional_data(data_to_rename)
 
-        # Find the rename frame element and scroll it into view
         rename_frame = self.scroll_into_view(
-            self.active_tab.find_element_by_id("dataset_name"))
+            self.active_tab.find_element_by_id("dataset_name")
+        )
 
-        # Clear the current name and set the new name
         rename_frame.find_element_by_tag_name("input").clear()
         rename_frame.find_element_by_tag_name("input").send_keys(rename)
 
@@ -509,16 +393,13 @@ class EvAMToolsPage:
         Returns:
             None
         """
-        # Find the file name element and set the name of the uploaded file
         file_name = self.driver.find_element_by_id("name_uploaded")
         file_name.clear()
         file_name.send_keys(name)
 
-        # Find the upload file element and send the file path to it
         upload_file = self.driver.find_element_by_xpath('//*[@id="csd"]')
         upload_file.send_keys(file_path)
 
-        # Wait for 0.5 seconds and load the content of the page
         self.driver.implicitly_wait(0.5)
         self.load_content()
 
@@ -533,12 +414,9 @@ class EvAMToolsPage:
         Returns:
             None
         """
-        # Find the number of genes frame element and select the specified number of genes
-        number_of_genes_frame = self.active_tab.find_element_by_id(
-            "gene_number_slider")
+        number_of_genes_frame = self.active_tab.find_element_by_id("gene_number_slider")
         self.select_from_sliderbar(
-            number_of_genes_frame.find_element_by_tag_name(
-                "span"), number_of_genes
+            number_of_genes_frame.find_element_by_tag_name("span"), number_of_genes
         )
 
     def add_genotype(self, mutations: list, count: int) -> None:
@@ -552,20 +430,17 @@ class EvAMToolsPage:
         Returns:
             None
         """
-        # Find the add genotype frame element and scroll it into view
-        add_genotype_frame = self.active_tab.find_element_by_id(
-            "define_genotype")
+        add_genotype_frame = self.active_tab.find_element_by_id("define_genotype")
         self.scroll_into_view(add_genotype_frame)
 
-        # Select the specified mutations from the checklist
-        self.select_from_checklist(add_genotype_frame.find_element_by_class_name(
-            "shiny-options-group"), mutations)
+        self.select_from_checklist(
+            add_genotype_frame.find_element_by_class_name("shiny-options-group"),
+            mutations,
+        )
 
-        # Clear the genotype frequency input field and set the specified frequency
         add_genotype_frame.find_element_by_id("genotype_freq").clear()
         add_genotype_frame.find_element_by_id("genotype_freq").send_keys(count)
 
-        # Wait for 1 second and click the Add button
         sleep(1)
         add_genotype_frame.find_element_by_tag_name("button").click()
 
@@ -583,11 +458,9 @@ class EvAMToolsPage:
         Returns:
             None
         """
-        # Find the DAG frame element and scroll it into view
         DAG_Frame = self.active_tab.find_element_by_id("define_genotype")
         self.scroll_into_view(DAG_Frame)
 
-        # Select the specified model, parent node, and child node from the bullet lists
         dag_model = DAG_Frame.find_element_by_id("dag_model")
         self.select_from_bullet_list(dag_model, model)
 
@@ -597,7 +470,6 @@ class EvAMToolsPage:
         dag_child_node = DAG_Frame.find_element_by_id("dag_to")
         self.select_from_bullet_list(dag_child_node, child_mode)
 
-        # Perform the specified action on the DAG
         if action == "add":
             DAG_Frame.find_element_by_id("add_edge").click()
         elif action == "remove":
@@ -615,54 +487,47 @@ class EvAMToolsPage:
         Returns:
             None
         """
-        # Check that the input lists have the same length
         if len(from_to) != len(relation) != len(lambdas):
-            raise ValueError(
-                "from_to, relation, lambdas must have the same length")
+            raise ValueError("from_to, relation, lambdas must have the same length")
 
-        # Find the DAG table element and scroll it into view
         DAG_table = self.active_tab.find_element_by_id(
-            "dag_table").find_element_by_tag_name("table")
+            "dag_table"
+        ).find_element_by_tag_name("table")
         self.scroll_into_view(DAG_table)
 
-        # Iterate over the rows of the DAG table and update the specified parent-child node pairs
         for idx, row in enumerate(DAG_table.find_elements_by_xpath("./tbody/tr")):
-            if (row.find_element_by_xpath("./td[1]").text, row.find_element_by_xpath("./td[2]").text) == from_to[idx]:
-                # Double-click the relation cell to enable editing
+            if (
+                row.find_element_by_xpath("./td[1]").text,
+                row.find_element_by_xpath("./td[2]").text,
+            ) == from_to[idx]:
                 ActionChains(self.driver).double_click(
-                    row.find_element_by_xpath("./td[3]")).perform()
+                    row.find_element_by_xpath("./td[3]")
+                ).perform()
 
-                # Clear the current relation and lambda values and set the specified values
                 row.find_element_by_xpath("./td[3]/input").clear()
-                row.find_element_by_xpath(
-                    "./td[3]/input").send_keys(relation[idx])
+                row.find_element_by_xpath("./td[3]/input").send_keys(relation[idx])
                 row.find_element_by_xpath("./td[4]/input").clear()
-                row.find_element_by_xpath(
-                    "./td[4]/input").send_keys(lambdas[idx])
+                row.find_element_by_xpath("./td[4]/input").send_keys(lambdas[idx])
 
-        # Press Ctrl+Enter to save the changes
-        ActionChains(self.driver).key_down(Keys.CONTROL).send_keys(
-            Keys.ENTER).key_up(Keys.CONTROL).perform()
+        ActionChains(self.driver).key_down(Keys.CONTROL).send_keys(Keys.ENTER).key_up(
+            Keys.CONTROL
+        ).perform()
         sleep(1)
 
     def generate_data_from_DAG_model(
         self, epos, num_genotypes, observation_noise
     ) -> None:
-        # Find the DAG frame element and scroll it into view
         DAG_frame = self.active_tab.find_element_by_id("define_genotype")
         self.scroll_into_view(DAG_frame)
 
-        # Clear the epos, num_genotypes, and observation_noise input fields and set the specified values
         DAG_frame.find_element_by_id("epos").clear()
         DAG_frame.find_element_by_id("epos").send_keys(epos)
 
         DAG_frame.find_element_by_id("dag_num_samples").clear()
-        DAG_frame.find_element_by_id(
-            "dag_num_samples").send_keys(num_genotypes)
+        DAG_frame.find_element_by_id("dag_num_samples").send_keys(num_genotypes)
 
         DAG_frame.find_element_by_id("dag_obs_noise").clear()
-        DAG_frame.find_element_by_id(
-            "dag_obs_noise").send_keys(observation_noise)
+        DAG_frame.find_element_by_id("dag_obs_noise").send_keys(observation_noise)
 
     def define_MHN(self, values) -> None:
         """
@@ -674,29 +539,28 @@ class EvAMToolsPage:
         Returns:
             None
         """
-        # Find the thetas table element and scroll it into view
         thetas_table = self.active_tab.find_element_by_id(
-            "thetas_table").find_element_by_tag_name("table")
+            "thetas_table"
+        ).find_element_by_tag_name("table")
         self.scroll_into_view(thetas_table)
 
-        # Iterate over the rows and columns of the thetas table and set the specified values
         for idx, row in enumerate(thetas_table.find_elements_by_xpath("./tbody/tr")):
-            # Double-click the first cell of the row to enable editing
             ActionChains(self.driver).double_click(
-                row.find_element_by_xpath("./td")).perform()
+                row.find_element_by_xpath("./td")
+            ).perform()
 
             for idx_2, col in enumerate(row.find_elements_by_xpath("./td")):
                 try:
-                    # Clear the current value and set the specified value
                     col.find_element_by_tag_name("input").clear()
-                    col.find_element_by_tag_name(
-                        "input").send_keys(values[idx][idx_2 - 1])
+                    col.find_element_by_tag_name("input").send_keys(
+                        values[idx][idx_2 - 1]
+                    )
                 except InvalidElementStateException:
                     continue
 
-        # Press Ctrl+Enter to save the changes
-        ActionChains(self.driver).key_down(Keys.CONTROL).send_keys(
-            Keys.ENTER).key_up(Keys.CONTROL).perform()
+        ActionChains(self.driver).key_down(Keys.CONTROL).send_keys(Keys.ENTER).key_up(
+            Keys.CONTROL
+        ).perform()
         sleep(1)
 
     def generate_data_from_MHN_model(self, num_genotypes, observation_noise) -> None:
@@ -710,20 +574,15 @@ class EvAMToolsPage:
         Returns:
             None
         """
-        # Find the MHN frame element and scroll it into view
         MHN_frame = self.active_tab.find_element_by_id("define_genotype")
         self.scroll_into_view(MHN_frame)
 
-        # Clear the mhn_num_samples and mhn_obs_noise input fields and set the specified values
         MHN_frame.find_element_by_id("mhn_num_samples").clear()
-        MHN_frame.find_element_by_id(
-            "mhn_num_samples").send_keys(num_genotypes)
+        MHN_frame.find_element_by_id("mhn_num_samples").send_keys(num_genotypes)
 
         MHN_frame.find_element_by_id("mhn_obs_noise").clear()
-        MHN_frame.find_element_by_id(
-            "mhn_obs_noise").send_keys(observation_noise)
+        MHN_frame.find_element_by_id("mhn_obs_noise").send_keys(observation_noise)
 
-        # Click the "Resample MHN" button to generate the data
         MHN_frame.find_element_by_id("resample_mhn").click()
 
     # Results tab functions
@@ -737,12 +596,9 @@ class EvAMToolsPage:
         Returns:
             None
         """
-        # Find the CPM options element and scroll it into view
-        cpm_options = self.driver.find_element_by_xpath(
-            '//*[@id="cpm2show"]/div')
+        cpm_options = self.driver.find_element_by_xpath('//*[@id="cpm2show"]/div')
         self.scroll_into_view(cpm_options)
 
-        # Select the specified CPMs from the checklist
         self.select_from_checklist(cpm_options, check)
 
     def predictions_from_fitted_models(self, option) -> None:
@@ -755,11 +611,9 @@ class EvAMToolsPage:
         Returns:
             None
         """
-        # Find the predictions element and scroll it into view
         predictions = self.driver.find_element_by_xpath('//*[@id="data2plot"]')
         self.scroll_into_view(predictions)
 
-        # Click the specified option from the predictions
         predictions.find_element_by_xpath(f"//*[text()='{option}']").click()
 
     def type_of_label(self, option) -> None:
@@ -772,11 +626,9 @@ class EvAMToolsPage:
         Returns:
             None
         """
-        # Find the labels element and scroll it into view
         labels = self.driver.find_element_by_xpath('//*[@id="label2plot"]')
         self.scroll_into_view(labels)
 
-        # Click the specified option from the labels
         labels.find_element_by_xpath(f"//*[text()='{option}']").click()
 
     def relevant_paths_to_show(self, value) -> None:
@@ -789,11 +641,9 @@ class EvAMToolsPage:
         Returns:
             None
         """
-        # Find the slider box element and scroll it into view
         slider_box = self.active_tab.find_element_by_class_name("irs--shiny")
         self.scroll_into_view(slider_box)
 
-        # Select the specified number of relevant paths from the slider bar
         self.select_from_sliderbar(slider_box, value)
 
     def download_results(self) -> None:
@@ -803,5 +653,4 @@ class EvAMToolsPage:
         Returns:
             None
         """
-        # Find the download button element and click it
         self.page_controller.xpath_click('//*[@id="download_cpm"]')

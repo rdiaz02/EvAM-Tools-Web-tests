@@ -1,11 +1,10 @@
 import traceback
 
-from selenium_core.selenium_wrapper import WrappedDriver
-from selenium_core.evam_tools_page_controller import EvAMToolsPage
+from selenium_core.evam_tools_page_controller import EvAMToolsDriver
 
 
 class TestCase:
-    def __init__(self, name, headless, maximize, large_log, screenshots):
+    def __init__(self, **config):
         """
         Initializes a new instance of the TestCase class with the specified options.
 
@@ -18,13 +17,10 @@ class TestCase:
 
         More arguments must be added to the constructor if they are needed in the test case.
         """
-        self.name = name
-        self.headless = headless
-        self.maximize = maximize
-        self.large_log = large_log
-        self.screenshots = screenshots
-        self.wrapped_driver = None
-        self.page_controller = None
+        self.name = config.get("name", "Test")
+        self.large_log = config.get("large_log", False)
+        self.set_up_config = config
+        self.evam_driver = None
 
     def test_body(self) -> None:
         """
@@ -39,45 +35,29 @@ class TestCase:
         """
         Runs the test case.
         """
-        # Call the set_up method to prepare the test environment
+
         self.set_up()
 
         try:
-            # Get the test_body method and call it
             method = getattr(self, "test_body")
             method()
         except Exception as e:
-            # If an exception is raised, print the error message
             print(f"Error while running test: {e}\n")
+            self.evam_driver.save_screenshot(str(self.name) + "_error.png")
 
-            # If the large_log attribute is True, print the traceback
             if self.large_log:
                 print(traceback.format_exc())
 
-            # If the screenshots attribute is True, save a screenshot of the error
-            if self.screenshots:
-                self.wrapped_driver.save_screenshot(str(self.name) + "_error.png")
-
-        # Call the tear_down method to clean up the test environment
         self.tear_down()
 
     def set_up(self) -> None:
         """
         Prepares the test environment.
         """
-        # Create a WrappedDriver instance with the specified headless and maximize options
-        self.wrapped_driver = WrappedDriver(self.headless, self.maximize)
-
-        # Connect to the driver instance
-        self.wrapped_driver.connect()
-
-        # Create an EvAMToolsPage instance with the driver instance and specified options
-        self.page_controller = EvAMToolsPage(
-            self.wrapped_driver.get_driver(), self.large_log, self.screenshots
-        )
+        self.evam_driver = EvAMToolsDriver(**self.set_up_config)
 
     def tear_down(self) -> None:
         """
         Cleans up the test environment.
         """
-        self.driver.close()
+        self.evam_driver.close()

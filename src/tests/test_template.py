@@ -17,8 +17,8 @@ from test_case import TestCase
 
 
 class TestMethod(TestCase):
-    def __init__(self, headless, maximize, large_log, screenshots):
-        super().__init__(headless, maximize, large_log, screenshots)
+    def __init__(self, **config):
+        super().__init__(**config)
 
     def test_body(self):
         print("Test template")

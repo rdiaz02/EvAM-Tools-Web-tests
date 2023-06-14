@@ -3,8 +3,8 @@ from selenium.webdriver.common.by import By
 
 
 class TestMethod(TestCase):
-    def __init__(self, headless, maximize, large_log, screenshots):
-        super().__init__(headless, maximize, large_log, screenshots)
+    def __init__(self, **config):
+        super().__init__(**config)
 
     def test_body(self):
         """
@@ -14,7 +14,7 @@ class TestMethod(TestCase):
             None
         """
         print("Testing locators")
-        driver = self.page_controller.driver
+        driver = self.evam_driver.driver
 
         # Find elements by ID
         element_by_id = driver.find_element_by_id("background")
@@ -28,7 +28,9 @@ class TestMethod(TestCase):
 
         # Find elements by XPath
         element_by_xpath = driver.find_element_by_xpath("/html/body/nav/div/ul/li[1]/a")
-        element_by_xpath_2 = driver.find_element(By.XPATH, "/html/body/nav/div/ul/li[1]/a")
+        element_by_xpath_2 = driver.find_element(
+            By.XPATH, "/html/body/nav/div/ul/li[1]/a"
+        )
         assert element_by_xpath == element_by_xpath_2
 
         # Find elements by CSS selector
