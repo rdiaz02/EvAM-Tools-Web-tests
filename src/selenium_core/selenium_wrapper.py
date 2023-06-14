@@ -7,13 +7,19 @@ from selenium.common.exceptions import WebDriverException
 from os import getenv
 
 BROWSER_TO_USE = "firefox"
+CONFIG_ERROR_MSG = f"""Error in {BROWSER_TO_USE} browser configuration:\n
+            - Make sure you have the correct binary location in the .env file in case of custom install\n
+            - Make sure the driver is in your PATH or is in the /usr/bin directory\n
+            - Make sure the URL is correct and the service is available\n"""
 
 
 class WrappedDriver:
     def __init__(self, **config) -> None:
         self.driver = None
         self.url = getenv("URL")
-        self.binary_loc = getenv("BINARY_LOC", "/usr/bin/" + BROWSER_TO_USE)
+        self.binary_loc = getenv(
+            BROWSER_TO_USE.upper() + "_BINARY_LOC", "/usr/bin/" + BROWSER_TO_USE
+        )
         self.config(**config)
         self.connect()
 
@@ -119,19 +125,17 @@ def validate_browser(browser: str) -> bool:
         try:
             options = webdriver.FirefoxOptions()
             options.headless = True
-            firefox_binary = FirefoxBinary(getenv("BINARY_LOC"))
+            firefox_binary = FirefoxBinary(
+                getenv("FIREFOX_BINARY_LOC", "/usr/bin/" + BROWSER_TO_USE)
+            )
             driver = webdriver.Firefox(options=options, firefox_binary=firefox_binary)
             driver.get(getenv("URL"))
             driver.close()
             print("Firefox browser configuration is valid")
             return True
-        except:
-            print(
-                """Error in Firefox browser configuration:\n
-            - Make sure you have the correct binary location in the .env file in case of custom install\n
-            - make sure the Geckodriver is in your PATH or is in the /usr/bin directory\n
-            - Make sure the URL is correct and the service is available\n"""
-            )
+        except Exception as e:
+            print(f"Exception: {e}")
+            print(CONFIG_ERROR_MSG)
             return False
 
     elif browser == "chrome":
@@ -139,16 +143,15 @@ def validate_browser(browser: str) -> bool:
         try:
             options = webdriver.ChromeOptions()
             options.headless = False
-            driver = webdriver.Chrome(options=options)
+            chrome_binary = getenv("CHROME_BINARY_LOC", "/usr/bin/" + BROWSER_TO_USE)
+            driver = webdriver.Chrome(options=options, executable_path=chrome_binary)
             driver.get(getenv("URL"))
             driver.close()
             print("Chrome browser configuration is valid")
             return True
-        except:
-            print(
-                """Error in Chrome browser configuration:\n
-            - Make sure you have the correct binary location in the .env file in case of custom install\n
-            - make sure the Chromedriver is in your PATH or is in the /usr/bin directory\n
-            - Make sure the URL is correct and the service is available\n"""
-            )
+        except Exception as e:
+            print(f"Exception: {e}")
+            print(CONFIG_ERROR_MSG)
             return False
+    else:
+        print(f"Browser {browser} not supported")
