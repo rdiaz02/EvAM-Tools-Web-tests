@@ -5,6 +5,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.common.exceptions import WebDriverException
 from os import getenv
+from time import sleep
 
 BROWSER_TO_USE = "firefox"
 CONFIG_ERROR_MSG = f"""Error in {BROWSER_TO_USE} browser configuration:\n
@@ -32,7 +33,7 @@ class WrappedDriver:
     def connect(self) -> None:
         if BROWSER_TO_USE == "firefox":
             self.connect_firefox()
-        elif BROWSER_TO_USE == "chrome":
+        elif BROWSER_TO_USE == "google-chrome":
             self.connect_chrome()
 
     def connect_firefox(self) -> None:
@@ -93,6 +94,15 @@ class WrappedDriver:
         except Exception:
             return False
 
+    def wait_visibility_by_id(self, id, timeout=10) -> bool:
+        try:
+            WebDriverWait(self.driver, timeout).until(
+                ec.visibility_of_element_located((By.ID, id))
+            )
+            return True
+        except Exception:
+            return False
+
     def find_element_by_text(
         self,
         tag_name,
@@ -108,14 +118,8 @@ class WrappedDriver:
         return None
 
     def scroll_into_view(self, element):
-        clickable = False
-        while clickable == False:
-            self.driver.execute_script("window.scrollBy(0,300)")
-            try:
-                element.click()
-                clickable = True
-            except WebDriverException:
-                pass
+        self.driver.execute_script("arguments[0].scrollIntoView();", element)
+        self.driver.execute_script("window.scrollBy(0,-50)")
 
 
 def validate_browser(browser: str) -> bool:
@@ -139,12 +143,11 @@ def validate_browser(browser: str) -> bool:
             return False
 
     elif browser == "chrome":
-        BROWSER_TO_USE = "chrome"
+        BROWSER_TO_USE = "google-chrome"
         try:
             options = webdriver.ChromeOptions()
-            options.headless = False
-            chrome_binary = getenv("CHROME_BINARY_LOC", "/usr/bin/" + BROWSER_TO_USE)
-            driver = webdriver.Chrome(options=options, executable_path=chrome_binary)
+            options.headless = True
+            driver = webdriver.Chrome(options=options)
             driver.get(getenv("URL"))
             driver.close()
             print("Chrome browser configuration is valid")
