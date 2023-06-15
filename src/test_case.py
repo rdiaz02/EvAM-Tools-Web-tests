@@ -43,7 +43,9 @@ class TestCase:
             method()
         except Exception as e:
             print(f"Error while running test: {e}\n")
-            self.evam_driver.save_screenshot(str(self.name) + "_error.png")
+            self.evam_driver.save_screenshot(
+                "./screenshots/" + str(self.name) + "_error.png"
+            )
 
             if self.large_log:
                 print(traceback.format_exc())
