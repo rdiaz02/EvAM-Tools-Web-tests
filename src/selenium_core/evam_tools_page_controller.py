@@ -112,14 +112,14 @@ class EvAMToolsDriver(WrappedDriver):
                 and option_element.find_element_by_xpath("./input").is_selected()
                 == False
             ):
-                option_element.find_element_by_xpath("./input").click()
+                option_element.click()
             # If the option is not in the list of options to select and is already selected, click on it to deselect it
             elif (
                 option_element.text not in check
                 and option_element.find_element_by_xpath("./input").is_selected()
                 == True
             ):
-                option_element.find_element_by_xpath("./input").click()
+                option_element.click()
 
     def select_from_dropdown(self, ui_element, option) -> None:
         """
@@ -186,6 +186,7 @@ class EvAMToolsDriver(WrappedDriver):
             ActionChains(self.driver).click_and_hold(slider).send_keys(
                 direction
             ).release().perform()
+            sleep(0.5)
             slider_value = int(
                 ui_element.find_element_by_class_name("irs-single").get_attribute(
                     "textContent"
@@ -223,12 +224,8 @@ class EvAMToolsDriver(WrappedDriver):
         cross_sectional_section = self.active_tab.find_element_by_xpath(
             f'//*[@id="tab-{self.session_id}-2"]/div/div/div/div[1]'
         )
-        cross_sectional_button = cross_sectional_section.find_element_by_xpath(
-            f'.//span[text()="{tag_name}"]'
-        )
+        self.find_element_by_text("span", tag_name, cross_sectional_section).click()
 
-        # Click on the button and load the content
-        cross_sectional_button.click()
         self.load_content()
 
     def run_evamtools(self, timeout=60) -> None:
@@ -242,6 +239,7 @@ class EvAMToolsDriver(WrappedDriver):
             None
         """
         analysis_button = self.active_tab.find_element_by_xpath('//*[@id="analysis"]')
+        self.scroll_into_view(analysis_button)
         analysis_button.click()
 
         # Wait for the loading spinner to appear and disappear
@@ -396,9 +394,10 @@ class EvAMToolsDriver(WrappedDriver):
         file_name = self.driver.find_element_by_id("name_uploaded")
         file_name.clear()
         file_name.send_keys(name)
+        sleep(0.5)
 
         upload_file = self.driver.find_element_by_xpath('//*[@id="csd"]')
-        upload_file.send_keys(file_path)
+        upload_file.send_keys(file_path + name + ".csv")
 
         self.driver.implicitly_wait(0.5)
         self.load_content()
