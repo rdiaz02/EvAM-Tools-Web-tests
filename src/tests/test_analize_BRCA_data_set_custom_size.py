@@ -15,7 +15,7 @@ class TestMethod(TestCase):
         self.evam_driver.upload_data_set("BRCA_ba_s", os.getenv("DATA_FILES_PATH"))
 
         self.evam_driver.change_genotypes_count(
-            [1, 2, 3, 4, 5, 6, 7, 8, 9], [90, 10, 570, 10, 10, 60, 20, 30, 10]
+            {1: 90, 2: 10, 3: 570, 4: 10, 5: 10, 6: 60, 7: 20, 8: 30, 9: 10}
         )
 
         # Boton de analisis

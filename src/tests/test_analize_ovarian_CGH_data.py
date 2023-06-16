@@ -12,7 +12,7 @@ class TestMethod(TestCase):
         self.evam_driver.navbar_to("User input", 10)
         self.evam_driver.select_from_cross_sectional_data("Upload file")
 
-        self.evam_driver.upload_data_set("BRCA_ba_s", os.getenv("DATA_FILES_PATH"))
+        self.evam_driver.upload_data_set("ov2", os.getenv("DATA_FILES_PATH"))
 
         self.evam_driver.toogle_advanced_options_on()
         self.evam_driver.set_advanced_options(
@@ -21,14 +21,23 @@ class TestMethod(TestCase):
         self.evam_driver.set_advanced_options("HESBCN_MCMC_iter-label", "500000")
         self.evam_driver.toogle_advanced_options_off()
 
-        # Boton de analisis
         self.evam_driver.run_evamtools()
 
-        # Descarga de los resultados
         self.evam_driver.navbar_to("Results", 10)
         self.evam_driver.CPMs_to_show(["CBN", "OT", "OncoBN"])
-        sleep(10)
+        sleep(5)
         self.evam_driver.CPMs_to_show(["MHN", "H-ESBCN"])
-        sleep(10)
+        sleep(5)
 
-        # self.evam_driver.driver.find_element_by_xpath('//*[@id="download_cpm"]').click()
+        self.evam_driver.navbar_to("User input", 10)
+        self.evam_driver.toogle_advanced_options_on()
+        self.evam_driver.set_advanced_options("OncoBN_model-label", "Conjusctive (CBN)")
+        self.evam_driver.toogle_advanced_options_off()
+
+        self.evam_driver.run_evamtools()
+
+        self.evam_driver.navbar_to("Results", 10)
+        self.evam_driver.CPMs_to_show(["CBN", "OT", "OncoBN"])
+        sleep(5)
+        self.evam_driver.CPMs_to_show(["MHN", "H-ESBCN"])
+        sleep(5)
