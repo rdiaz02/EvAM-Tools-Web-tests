@@ -74,7 +74,9 @@ class WrappedDriver:
 
     def close(self) -> None:
         if self.driver != None:
-            self.driver.close()
+            if not self.headless:
+                sleep(10)
+            self.driver.quit()
 
     def wait_invisibility_by_xpath(self, xpath, timeout=10) -> bool:
         try:
@@ -120,6 +122,8 @@ class WrappedDriver:
     def scroll_into_view(self, element):
         self.driver.execute_script("arguments[0].scrollIntoView();", element)
         self.driver.execute_script("window.scrollBy(0,-50)")
+        sleep(1)
+        return element
 
 
 def validate_browser(browser: str) -> bool:
