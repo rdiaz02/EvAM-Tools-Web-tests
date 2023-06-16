@@ -228,7 +228,7 @@ class EvAMToolsDriver(WrappedDriver):
 
         self.load_content()
 
-    def run_evamtools(self, timeout=60) -> None:
+    def run_evamtools(self, timeout=120) -> None:
         """
         Runs the EVAM Tools analysis and waits for the results to load.
 
@@ -241,6 +241,14 @@ class EvAMToolsDriver(WrappedDriver):
         analysis_button = self.active_tab.find_element_by_xpath('//*[@id="analysis"]')
         self.scroll_into_view(analysis_button)
         analysis_button.click()
+
+        try:
+            sleep(0.5)
+            self.wait_visibility_by_xpath("/html/body/div[12]/div/div", 1)
+            warning = self.driver.find_element_by_xpath("/html/body/div[12]/div/div")
+            warning.find_element_by_tag_name("button").click()
+        except Exception:
+            pass
 
         # Wait for the loading spinner to appear and disappear
         self.wait_visibility_by_xpath(
@@ -284,12 +292,12 @@ class EvAMToolsDriver(WrappedDriver):
             advanced_options.click()
             self.wait_invisibility_by_xpath('//*[@id="all_advanced_options"]', 1)
 
-    def set_advanced_options(self, option_name, option_value, timeout=10) -> None:
+    def set_advanced_options(self, label_id, option_value, timeout=10) -> None:
         """
         Sets the value of the specified advanced option.
 
         Args:
-            option_name (str): The name of the option to set.
+            label_id (str): The ID of the label on the left of the option, obtained inspecting the element.
             option_value (str): The value to set the option to.
             timeout (int): The maximum amount of time to wait for the option to become visible.
 
@@ -300,7 +308,7 @@ class EvAMToolsDriver(WrappedDriver):
         self.wait_visibility_by_id("all_advanced_options", timeout)
 
         for option in advanced_options.find_elements_by_xpath("./div/div"):
-            if option.find_element_by_xpath("./label").text != option_name:
+            if option.find_element_by_xpath("./label").get_attribute("id") != label_id:
                 continue
 
             try:
@@ -325,7 +333,7 @@ class EvAMToolsDriver(WrappedDriver):
                 option.find_element_by_xpath("./input").clear()
                 option.find_element_by_xpath("./input").send_keys(option_value)
 
-    def change_genotypes_count(self, index=[], counts=[]) -> None:
+    def change_genotypes_count(self, counts={}) -> None:
         """
         Changes the genotype counts for the specified indices.
 
@@ -336,8 +344,10 @@ class EvAMToolsDriver(WrappedDriver):
         Returns:
             None
         """
-        if len(index) != len(counts):
-            raise ValueError("Index, counts must have the same length")
+        if len(counts) == 0:
+            return
+
+        index = list(counts.keys())
 
         genotype_table = self.active_tab.find_element_by_id(
             "change_counts"
@@ -351,7 +361,7 @@ class EvAMToolsDriver(WrappedDriver):
                 ).perform()
 
                 row.find_element_by_xpath("./td[3]/input").clear()
-                row.find_element_by_xpath("./td[3]/input").send_keys(counts[idx])
+                row.find_element_by_xpath("./td[3]/input").send_keys(counts[index[idx]])
 
         ActionChains(self.driver).key_down(Keys.CONTROL).send_keys(Keys.ENTER).key_up(
             Keys.CONTROL
@@ -372,12 +382,12 @@ class EvAMToolsDriver(WrappedDriver):
         self.scroll_into_view(self.active_tab.find_element_by_id("select_csd"))
         self.select_from_cross_sectional_data(data_to_rename)
 
-        rename_frame = self.scroll_into_view(
-            self.active_tab.find_element_by_id("dataset_name")
-        )
+        rename_frame = self.active_tab.find_element_by_id("dataset_name")
+        self.scroll_into_view(rename_frame)
 
         rename_frame.find_element_by_tag_name("input").clear()
         rename_frame.find_element_by_tag_name("input").send_keys(rename)
+        rename_frame.find_element_by_tag_name("button").click()
 
     # Upload file params
     def upload_data_set(self, name, file_path: str) -> None:
@@ -432,10 +442,11 @@ class EvAMToolsDriver(WrappedDriver):
         add_genotype_frame = self.active_tab.find_element_by_id("define_genotype")
         self.scroll_into_view(add_genotype_frame)
 
-        self.select_from_checklist(
-            add_genotype_frame.find_element_by_class_name("shiny-options-group"),
-            mutations,
-        )
+        if mutations != []:
+            self.select_from_checklist(
+                add_genotype_frame.find_element_by_class_name("shiny-options-group"),
+                mutations,
+            )
 
         add_genotype_frame.find_element_by_id("genotype_freq").clear()
         add_genotype_frame.find_element_by_id("genotype_freq").send_keys(count)
@@ -444,7 +455,15 @@ class EvAMToolsDriver(WrappedDriver):
         add_genotype_frame.find_element_by_tag_name("button").click()
 
     # DAG
-    def define_DAG(self, model, parent_node, child_mode, action) -> None:
+    def define_DAG_model(self, model) -> None:
+        DAG_Frame = self.active_tab.find_element_by_id("define_genotype")
+        self.scroll_into_view(DAG_Frame)
+
+        dag_model = DAG_Frame.find_element_by_id("dag_model")
+        self.select_from_bullet_list(dag_model, model)
+        sleep(1)
+
+    def define_DAG_new_edge(self, parent_node, child_mode, action) -> None:
         """
         Defines a directed acyclic graph (DAG) for the analysis.
 
@@ -460,9 +479,6 @@ class EvAMToolsDriver(WrappedDriver):
         DAG_Frame = self.active_tab.find_element_by_id("define_genotype")
         self.scroll_into_view(DAG_Frame)
 
-        dag_model = DAG_Frame.find_element_by_id("dag_model")
-        self.select_from_bullet_list(dag_model, model)
-
         dag_parent_node = DAG_Frame.find_element_by_id("dag_from")
         self.select_from_bullet_list(dag_parent_node, parent_node)
 
@@ -474,7 +490,7 @@ class EvAMToolsDriver(WrappedDriver):
         elif action == "remove":
             DAG_Frame.find_element_by_id("remove_edge").click()
 
-    def define_DAG_table(self, from_to, relation, lambdas) -> None:
+    def define_DAG_table(self, values) -> None:
         """
         Defines a directed acyclic graph (DAG) table for the analysis.
 
@@ -486,8 +502,6 @@ class EvAMToolsDriver(WrappedDriver):
         Returns:
             None
         """
-        if len(from_to) != len(relation) != len(lambdas):
-            raise ValueError("from_to, relation, lambdas must have the same length")
 
         DAG_table = self.active_tab.find_element_by_id(
             "dag_table"
@@ -495,38 +509,53 @@ class EvAMToolsDriver(WrappedDriver):
         self.scroll_into_view(DAG_table)
 
         for idx, row in enumerate(DAG_table.find_elements_by_xpath("./tbody/tr")):
-            if (
-                row.find_element_by_xpath("./td[1]").text,
-                row.find_element_by_xpath("./td[2]").text,
-            ) == from_to[idx]:
-                ActionChains(self.driver).double_click(
-                    row.find_element_by_xpath("./td[3]")
-                ).perform()
-
-                row.find_element_by_xpath("./td[3]/input").clear()
-                row.find_element_by_xpath("./td[3]/input").send_keys(relation[idx])
-                row.find_element_by_xpath("./td[4]/input").clear()
-                row.find_element_by_xpath("./td[4]/input").send_keys(lambdas[idx])
+            for element in row.find_elements_by_xpath("./td"):
+                ActionChains(self.driver).double_click(element).perform()
+                element_input = element.find_element_by_xpath("./input")
+                if element_input.get_attribute("readonly") == None:
+                    element_input.clear()
+                    element_input.send_keys(values[idx][0])
+                    values[idx].pop(0)
 
         ActionChains(self.driver).key_down(Keys.CONTROL).send_keys(Keys.ENTER).key_up(
             Keys.CONTROL
         ).perform()
         sleep(1)
 
-    def generate_data_from_DAG_model(
-        self, epos, num_genotypes, observation_noise
-    ) -> None:
+    def define_DAG_epos(self, epos) -> None:
         DAG_frame = self.active_tab.find_element_by_id("define_genotype")
         self.scroll_into_view(DAG_frame)
 
         DAG_frame.find_element_by_id("epos").clear()
         DAG_frame.find_element_by_id("epos").send_keys(epos)
 
+    def define_DAG_num_genotypes(self, num_genotypes) -> None:
+        DAG_frame = self.active_tab.find_element_by_id("define_genotype")
+        self.scroll_into_view(DAG_frame)
+
         DAG_frame.find_element_by_id("dag_num_samples").clear()
         DAG_frame.find_element_by_id("dag_num_samples").send_keys(num_genotypes)
 
+    def define_DAG_observational_noise(self, observation_noise) -> None:
+        DAG_frame = self.active_tab.find_element_by_id("define_genotype")
+        self.scroll_into_view(DAG_frame)
+
         DAG_frame.find_element_by_id("dag_obs_noise").clear()
         DAG_frame.find_element_by_id("dag_obs_noise").send_keys(observation_noise)
+
+    def generate_data_from_DAG(self) -> None:
+        DAG_frame = self.active_tab.find_element_by_id("define_genotype")
+        self.scroll_into_view(DAG_frame)
+
+        DAG_frame.find_element_by_id("resample_dag").click()
+        sleep(2)
+
+    def reset_DAG(self) -> None:
+        DAG_frame = self.active_tab.find_element_by_id("define_genotype")
+        self.scroll_into_view(DAG_frame)
+
+        DAG_frame.find_element_by_id("clear_dag").click()
+        sleep(2)
 
     def define_MHN(self, values) -> None:
         """
@@ -544,45 +573,60 @@ class EvAMToolsDriver(WrappedDriver):
         self.scroll_into_view(thetas_table)
 
         for idx, row in enumerate(thetas_table.find_elements_by_xpath("./tbody/tr")):
-            ActionChains(self.driver).double_click(
-                row.find_element_by_xpath("./td")
-            ).perform()
+            for element in row.find_elements_by_xpath("./td"):
+                ActionChains(self.driver).double_click(element).perform()
+                element_input = element.find_element_by_xpath("./input")
+                if element_input.get_attribute("readonly") == None:
+                    element_input.clear()
+                    element_input.send_keys(values[idx][0])
+                    values[idx].pop(0)
 
-            for idx_2, col in enumerate(row.find_elements_by_xpath("./td")):
-                try:
-                    col.find_element_by_tag_name("input").clear()
-                    col.find_element_by_tag_name("input").send_keys(
-                        values[idx][idx_2 - 1]
-                    )
-                except InvalidElementStateException:
-                    continue
+        # for idx, row in enumerate(thetas_table.find_elements_by_xpath("./tbody/tr")):
+        #     ActionChains(self.driver).double_click(
+        #         row.find_element_by_xpath("./td")
+        #     ).perform()
+
+        #     for idx_2, col in enumerate(row.find_elements_by_xpath("./td")):
+        #         try:
+        #             col.find_element_by_tag_name("input").clear()
+        #             col.find_element_by_tag_name("input").send_keys(
+        #                 values[idx][idx_2 - 1]
+        #             )
+        #         except InvalidElementStateException:
+        #             continue
 
         ActionChains(self.driver).key_down(Keys.CONTROL).send_keys(Keys.ENTER).key_up(
             Keys.CONTROL
         ).perform()
         sleep(1)
 
-    def generate_data_from_MHN_model(self, num_genotypes, observation_noise) -> None:
-        """
-        Generates data from a Markov hidden network (MHN) model.
-
-        Args:
-            num_genotypes (int): The number of genotypes to generate data for.
-            observation_noise (float): The observation noise to use for the data generation.
-
-        Returns:
-            None
-        """
+    def define_MHN_number_of_genotypes(self, num_genotypes) -> None:
         MHN_frame = self.active_tab.find_element_by_id("define_genotype")
         self.scroll_into_view(MHN_frame)
 
         MHN_frame.find_element_by_id("mhn_num_samples").clear()
         MHN_frame.find_element_by_id("mhn_num_samples").send_keys(num_genotypes)
 
+    def define_MHN_observational_noise(self, observation_noise) -> None:
+        MHN_frame = self.active_tab.find_element_by_id("define_genotype")
+        self.scroll_into_view(MHN_frame)
+
         MHN_frame.find_element_by_id("mhn_obs_noise").clear()
         MHN_frame.find_element_by_id("mhn_obs_noise").send_keys(observation_noise)
 
+    def generate_data_from_MHN(self) -> None:
+        MHN_frame = self.active_tab.find_element_by_id("define_genotype")
+        self.scroll_into_view(MHN_frame)
+
         MHN_frame.find_element_by_id("resample_mhn").click()
+        sleep(2)
+
+    def reset_MHN(self) -> None:
+        MHN_frame = self.active_tab.find_element_by_id("define_genotype")
+        self.scroll_into_view(MHN_frame)
+
+        MHN_frame.find_element_by_id("clear_mhn").click()
+        sleep(2)
 
     # Results tab functions
     def CPMs_to_show(self, check: list) -> None:
