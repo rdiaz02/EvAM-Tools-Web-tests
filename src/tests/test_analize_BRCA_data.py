@@ -21,10 +21,8 @@ class TestMethod(TestCase):
         self.evam_driver.set_advanced_options("HESBCN_MCMC_iter-label", "500000")
         self.evam_driver.toogle_advanced_options_off()
 
-        # Boton de analisis
         self.evam_driver.run_evamtools()
 
-        # Descarga de los resultados
         self.evam_driver.navbar_to("Results", 10)
         self.evam_driver.CPMs_to_show(["CBN", "OT", "OncoBN"])
         sleep(10)
