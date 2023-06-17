@@ -1,6 +1,6 @@
 import traceback
 
-from selenium_core.evam_tools_page_controller import EvAMToolsDriver
+from selenium_core.evam_tools_driver import EvAMToolsDriver
 
 
 class TestCase:
