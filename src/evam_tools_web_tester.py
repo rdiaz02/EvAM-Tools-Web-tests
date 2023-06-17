@@ -1,7 +1,7 @@
 import json
 import argparse
 
-from os import getenv
+from os import getenv, path, makedirs
 from typing import List
 from selenium_core.selenium_wrapper import validate_browser
 from dotenv import load_dotenv
@@ -15,6 +15,8 @@ except FileNotFoundError:
     exit(1)
 
 TESTS_SELECTOR_PATH = getenv("TESTS_SELECTOR_PATH")
+SCREENSHOTS_PATH = "screenshots/"
+CHECK_FOLDER = path.isdir(SCREENSHOTS_PATH)
 
 
 def main() -> None:
@@ -46,6 +48,10 @@ def main() -> None:
 
     if not validate_browser(args.browser):
         return
+
+    if not CHECK_FOLDER:
+        makedirs(SCREENSHOTS_PATH)
+        print("Created folder : ", SCREENSHOTS_PATH)
 
     tests_to_run = select_tests(TESTS_SELECTOR_PATH)
 
