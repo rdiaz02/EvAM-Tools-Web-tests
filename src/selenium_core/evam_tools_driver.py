@@ -62,7 +62,6 @@ class EvAMToolsDriver(WrappedDriver):
                         break
 
                 # Wait for the content to load
-                sleep(5)
                 self.load_content()
                 break
 
@@ -88,6 +87,8 @@ class EvAMToolsDriver(WrappedDriver):
 
             # If the element is a div, recursively load its content
             if elem.tag_name == "div":
+                if self.headless and "plot" in elem.get_attribute("id"):
+                    continue
                 self.load_content(elem)
 
     def select_from_checklist(self, ui_element, check: list) -> None:
@@ -136,14 +137,10 @@ class EvAMToolsDriver(WrappedDriver):
 
         # Click on the dropdown input element to open the dropdown
         ui_element.find_element_by_class_name("selectize-input").click()
-
-        # Loop through the options in the dropdown
-        options = ui_element.find_elements_by_class_name("option")
-        for opt in options:
-            # If the option matches the specified option, click on it and break out of the loop
-            if opt.text == option:
-                opt.click()
-                break
+        option_element = ui_element.find_element_by_xpath(
+            f".//div[@class='option' and text()='{option}']"
+        )
+        option_element.click()
 
     def select_from_sliderbar(self, ui_element, value) -> None:
         """
@@ -409,7 +406,6 @@ class EvAMToolsDriver(WrappedDriver):
         upload_file = self.driver.find_element_by_xpath('//*[@id="csd"]')
         upload_file.send_keys(file_path + name + ".csv")
 
-        self.driver.implicitly_wait(0.5)
         self.load_content()
 
     # Manually genotype frequencies
