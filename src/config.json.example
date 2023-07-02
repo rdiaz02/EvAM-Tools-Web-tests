@@ -1,19 +1,21 @@
 {
     "group_name": [
-        {"test_name": {
-            "headless": true,
-            "maximize": false,
+        {"module": "test_1",
+        "args":{
+            "headless": false,
+            "maximize": true,
             "large_log": false,
-            "screenshots": false
+            "screenshots": true
             }
         }
     ],
     "group_name_2": [
-        {"test_name": {
-            "headless": true,
-            "maximize": false,
+        {"module": "test_2",
+        "args":{
+            "headless": false,
+            "maximize": true,
             "large_log": false,
-            "screenshots": false
+            "screenshots": true
             }
         }
     ]
