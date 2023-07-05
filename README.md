@@ -32,3 +32,9 @@ python3 ./src/evam-tools-web-tester ---tests_list {group_name} --browser {browse
 
 * group_name: nombre del grupo de pruebas a ejecutar presente en el fichero de configuración **Config.json**
 * browser_name: nombre del buscador contra el que se van a ejecutar las pruebas.
+
+## Creación de nuevas pruebas
+Para agregar una nueva prueba se debe partir del fichero **./src/tests/test_template.py** y no alterar los nombres de
+la clase ni de la función ya que no funcionará la ejecución.
+Una vez creada la prueba basta con dejarla en el módulo **tests** e incluirla en el grupo que se va a ejecutar en el 
+fichero de configuración.
